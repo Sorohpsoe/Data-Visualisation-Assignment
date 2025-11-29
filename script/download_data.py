@@ -36,14 +36,9 @@ def download_dataset(url, output_path):
         url: URL of the compressed dataset
         output_path: Path where to save the uncompressed CSV file
     """
-    print(f"  Downloading from {url}...")
-    
     # Download the compressed file
     response = requests.get(url, stream=True)
     response.raise_for_status()
-    
-    # The file is gzip compressed, so we need to decompress it
-    print(f"  Decompressing and saving to {output_path}...")
     
     # Save the compressed content temporarily
     temp_gz = output_path.with_suffix('.csv.gz')
@@ -58,8 +53,6 @@ def download_dataset(url, output_path):
     
     # Remove the temporary compressed file
     temp_gz.unlink()
-    
-    print(f"  ✓ Successfully saved!")
 
 def main():
     """Main function to download all datasets."""
@@ -68,28 +61,21 @@ def main():
     data_dir.mkdir(parents=True, exist_ok=True)
     
     print("=" * 70)
-    print("Eurostat Dataset Downloader")
-    print("=" * 70)
-    print()
+    print("Downloading Eurostat datasets...")
     
     # Download each dataset
     for dataset in DATASETS:
         output_path = data_dir / dataset["filename"]
         
-        print(f"Dataset: {dataset['name']}")
-        print(f"File: {dataset['filename']}")
-        
         if output_path.exists():
-            print(f"  ⊗ File already exists, skipping download.")
+            print(f"  ⊗ {dataset['filename']} - already exists")
         else:
             try:
                 download_dataset(dataset["url"], output_path)
+                print(f"  ✓ {dataset['filename']} - downloaded")
             except Exception as e:
-                print(f"  ✗ Error downloading dataset: {e}")
-        
-        print()
+                print(f"  ✗ {dataset['filename']} - error: {e}")
     
-    print("=" * 70)
     print("Download process completed!")
     print("=" * 70)
 
