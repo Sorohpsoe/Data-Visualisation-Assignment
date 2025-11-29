@@ -1,0 +1,12 @@
+# Virtual Environment
+venv/
+venv*/
+ENV/
+env/
+.venv/
+
+# Data
+data/input/*
+
+# Python
+__pycache__/
