@@ -1,14 +1,24 @@
-"""
-Plot an interactive scatter from
-`data/output/integrated_eurostat_transport_climate.csv`.
+"""plot_scatter.py
 
-- Country-average across available years (one point per country)
-- X axis: `share_buses_trains` (%)
-- Y axis: `road_co2_per_capita_g` (g/hab)
-- Color: `ghg_per_capita` (tCO2e/hab)
+Create an interactive scatter visualisation that summarises the integrated
+Eurostat transport and climate indicators at country level (one point per
+country, averaged across available years).
 
-Writes an interactive HTML to `data/output/transport_climate_scatter.html` and
-optional PNG/SVG static images to `data/output`.
+Inputs:
+- ``data/output/integrated_eurostat_transport_climate.csv`` (produced by
+    ``clean_data.py``).
+
+Outputs:
+- Interactive HTML: ``data/output/transport_climate_scatter.html``;
+- Optional static renders: PNG and SVG in ``data/output/`` (requires
+    ``kaleido`` for static export).
+
+Visual encodings:
+- X: share of buses+trains (%)
+- Y: road CO2 per capita (kg/hab)
+- Color: total GHG per capita (tCO2e/hab)
+
+Citation: Eurostat (SDG_09_50, SDG_13_10, ENV_AC_AIBRID_RD)
 """
 
 from pathlib import Path
@@ -88,7 +98,6 @@ def main():
     grp["country_name"] = grp["country"].apply(code_to_name)
 
     # Scatter: color by ghg_per_capita, fixed marker size
-    # Restore previous custom gradient (green -> warm -> red/brown)
     custom_scale = [
         "#E6F4E6",  # very light green (low GHG)
         "#7FB769",  # olive green
@@ -123,7 +132,7 @@ def main():
     )
 
     # Fix marker size (no size-encoding) and add thin outline for clarity
-    fig.update_traces(marker=dict(size=40, line=dict(width=0.6, color='DarkSlateGrey')))
+    fig.update_traces(marker=dict(size=45, line=dict(width=0.6, color='DarkSlateGrey')))
     # Improve layout: vertical colorbar on the right, title + subtitle, source
     try:
         fig.update_layout(showlegend=False)
@@ -138,8 +147,7 @@ def main():
             len=0.8,
             thickness=14,
         ))
-
-        # Shorter title with subtitle
+        # Title with subtitle
         fig.update_layout(title={
             'text': "Public transport share vs. Road CO₂ emissions (EU countries)<br><sup>With total GHG per capita encoded as color</sup>",
             'y':0.98,
@@ -208,7 +216,6 @@ def main():
     except Exception:
         pass
 
-    # Improve country label readability: choose per-point label color
     try:
         # Decide label color based on GHG intensity so labels remain readable
         # If ghg_per_capita is above the median, marker color tends to be darker -> use white labels

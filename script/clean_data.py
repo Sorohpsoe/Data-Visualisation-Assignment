@@ -1,5 +1,20 @@
-"""
-Script to clean and process Eurostat datasets for the Data Visualisation Assignment.
+"""clean_data.py
+
+Data cleaning and integration utilities for the Eurostat transport and
+climate datasets used in this project.
+
+Provides dataset-specific cleaning functions that standardise column names
+and types, and an integration function that merges the cleaned tables by
+`country` and `year` producing a single CSV for downstream analysis.
+
+Inputs:
+- CSV files in ``data/input/`` (Eurostat SDMX-CSV downloads).
+
+Output:
+- ``data/output/integrated_eurostat_transport_climate.csv`` (inner join of
+    cleaned indicators).
+
+Source: Eurostat (SDG_09_50, SDG_13_10, ENV_AC_AIBRID_RD)
 """
 
 import pandas as pd
@@ -15,7 +30,13 @@ DATASETS = {
 }
 
 def load_datasets():
-    """Load all datasets into pandas DataFrames."""
+    """Load input CSV files from ``DATA_DIR`` and return a dict of DataFrames.
+
+    Returns
+    -------
+    dict
+        Mapping dataset key -> pandas.DataFrame for each input CSV found.
+    """
     dataframes = {}
     
     for key, filename in DATASETS.items():
@@ -30,10 +51,10 @@ def load_datasets():
 
 
 def clean_buses_trains(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean the buses & trains dataset.
+    """Return a cleaned DataFrame for buses and trains share.
 
-    Keeps relevant columns, renames them and converts types.
-    Keeps `OBS_FLAG` untouched.
+    The returned frame contains at least the columns ``country``, ``year``,
+    ``share_buses_trains`` and preserves ``OBS_FLAG`` when present.
     """
     # Keep only rows for buses total and expected columns
     if "vehicle" in df.columns:
@@ -64,10 +85,11 @@ def clean_buses_trains(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_greenhouse_gas(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean the greenhouse gas dataset.
+    """Return a cleaned greenhouse-gas DataFrame.
 
-    Keeps and renames columns; converts `ghg_per_capita` to float.
-    Assumes values are tonnes per capita.
+    Filters the source series to per-capita values (``unit == 'T_HAB'`` and
+    ``src_crf == 'TOTXMEMO'`` when present) and renames ``OBS_VALUE`` to
+    ``ghg_per_capita`` (tonnes per capita).
     """
     # Keep only rows with unit == 'T_HAB' (tonnes per habitant)
     if "unit" in df.columns:
@@ -101,10 +123,11 @@ def clean_greenhouse_gas(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_road_emissions(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean the road transport air emissions dataset.
+    """Return a cleaned road emissions DataFrame.
 
-    Filters for road CO2 per resident units (AEMIS_RES + CO2),
-    keeps columns and renames `OBS_VALUE` to `road_co2_per_capita_g`.
+    The function filters rows to resident air-emissions for CO2 and keeps
+    the ``KG_HAB`` unit, renaming ``OBS_VALUE`` to
+    ``road_co2_per_capita_g`` (grams per inhabitant).
     """
     # Ensure filter columns exist
     if "indic_env" not in df.columns or "airpol" not in df.columns:
@@ -142,9 +165,11 @@ def clean_road_emissions(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def integrate_datasets(cleaned: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Integrate the three cleaned datasets by inner join on ['country','year'].
+    """Integrate cleaned tables by performing inner joins on ``country`` and
+    ``year``.
 
-    Removes rows with missing indicator values.
+    Returns a DataFrame containing the intersection of years/countries for
+    which all target indicators are available.
     """
     # Expecting keys: 'buses_trains', 'greenhouse_gas', 'road_emissions'
     bt = cleaned.get("buses_trains", pd.DataFrame())
@@ -166,7 +191,11 @@ def integrate_datasets(cleaned: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     return merged
 
 def display_dataset_info(dataframes):
-    """Display information about each dataset."""
+    """Print simple dataset diagnostics (info and head) to stdout.
+
+    This helper is intended for quick inspection when running the cleaning
+    script interactively.
+    """
     for name, df in dataframes.items():
         print("=" * 70)
         print(f"Dataset: {name}")
@@ -178,7 +207,11 @@ def display_dataset_info(dataframes):
         print("\n")
 
 def main():
-    """Main function to load and display datasets."""
+    """Run full cleaning and integration, then save the integrated CSV.
+
+    This script prints progress information and writes the integrated
+    dataset to ``data/output/integrated_eurostat_transport_climate.csv``.
+    """
     print("=" * 70)
     print("Eurostat Dataset Cleaning Script")
     print("=" * 70)

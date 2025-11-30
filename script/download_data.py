@@ -1,6 +1,11 @@
-"""
-Script to download Eurostat datasets for the Data Visualisation Assignment.
-Downloads datasets only if they don't already exist in data/input/ folder.
+"""download_data.py
+
+Utility to download and decompress the Eurostat CSV extracts used in this
+project. Files are saved to ``data/input/`` and only downloaded when
+missing to avoid repeated network transfers.
+
+Data sources (Eurostat SDMX-CSV endpoints) are recorded in the ``DATASETS``
+mapping within this module.
 """
 
 import os
